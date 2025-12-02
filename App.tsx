@@ -1,12 +1,15 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { generateMockProcesses } from './constants';
 import { ProcessItem, SystemStats, ScanMode } from './types';
 import { MemoryGauge } from './components/MemoryGauge';
 import { ProcessRow } from './components/ProcessRow';
 import { analyzeProcessList } from './services/geminiService';
-import { PYTHON_SOURCE } from './desktopAppSource';
+import { PYTHON_SOURCE, BUILD_SCRIPT } from './desktopAppSource';
 
 const TOTAL_RAM_GB = 32;
+
+type ModalTab = 'app' | 'builder' | 'guide';
 
 export default function App() {
   const [apiKey, setApiKey] = useState(process.env.API_KEY || '');
@@ -16,17 +19,18 @@ export default function App() {
   const [scanMode, setScanMode] = useState<ScanMode>(ScanMode.QUICK);
   const [analyzed, setAnalyzed] = useState(false);
   const [notification, setNotification] = useState<{msg: string, type: 'success' | 'info'} | null>(null);
-  const [showCode, setShowCode] = useState(false);
-  const [isLightMode, setIsLightMode] = useState(false);
   
-  // Confirmation Modal State
+  // Modal States
+  const [showCode, setShowCode] = useState(false);
+  const [activeTab, setActiveTab] = useState<ModalTab>('app');
+
+  const [isLightMode, setIsLightMode] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // Initialize with mock data
   useEffect(() => {
     setProcesses(generateMockProcesses());
     
-    // Check system preference
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
         setIsLightMode(true);
     }
@@ -111,9 +115,20 @@ export default function App() {
     });
   };
 
-  const copyCode = () => {
-    navigator.clipboard.writeText(PYTHON_SOURCE);
-    setNotification({ msg: "Python source code copied to clipboard!", type: 'success' });
+  const copyContent = (content: string, name: string) => {
+    navigator.clipboard.writeText(content);
+    setNotification({ msg: `${name} copied to clipboard!`, type: 'success' });
+  };
+
+  const downloadFile = (filename: string, content: string) => {
+    const element = document.createElement('a');
+    const file = new Blob([content], {type: 'text/plain'});
+    element.href = URL.createObjectURL(file);
+    element.download = filename;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    setNotification({ msg: `Downloaded ${filename}`, type: 'success' });
   };
 
   const selectedProcesses = processes.filter(p => selectedIds.has(p.id));
@@ -125,31 +140,135 @@ export default function App() {
       <div className="liquid-bg dark-liquid" />
       <div className="liquid-bg light-liquid" />
 
-      {/* Code Modal */}
+      {/* Download Center Modal */}
       {showCode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-fade-in">
-            <div className="bg-[#1a1a1a] w-full max-w-4xl h-[80vh] rounded-2xl border border-white/10 flex flex-col shadow-2xl animate-scale-in">
-                <div className="flex items-center justify-between p-4 border-b border-white/10">
+            <div className="bg-[#1a1a1a] w-full max-w-5xl h-[85vh] rounded-2xl border border-white/10 flex flex-col shadow-2xl animate-scale-in overflow-hidden">
+                
+                {/* Modal Header */}
+                <div className="flex items-center justify-between p-6 border-b border-white/10 bg-[#202020]">
                     <div>
-                        <h2 className="text-xl font-bold text-white">NeuroClear Desktop Source</h2>
-                        <p className="text-xs text-gray-400">neuroclear_desktop.py</p>
+                        <h2 className="text-2xl font-bold text-white mb-1">Download Center</h2>
+                        <p className="text-xs text-gray-400">Get the full Desktop Application and Installer</p>
                     </div>
-                    <div className="flex gap-2">
-                         <button onClick={copyCode} className="px-3 py-1.5 bg-neon-cyan/20 text-neon-cyan hover:bg-neon-cyan/30 rounded text-sm font-medium transition-colors">
-                            Copy Code
-                        </button>
-                        <button onClick={() => setShowCode(false)} className="px-3 py-1.5 hover:bg-white/10 rounded text-gray-400">
-                            Close
-                        </button>
+                    <button onClick={() => setShowCode(false)} className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+
+                {/* Tabs */}
+                <div className="flex border-b border-white/10 bg-[#252525]">
+                    <button 
+                        onClick={() => setActiveTab('app')}
+                        className={`px-6 py-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'app' ? 'border-neon-cyan text-neon-cyan bg-white/5' : 'border-transparent text-gray-400 hover:text-white hover:bg-white/5'}`}
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+                        Source Code (App)
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('builder')}
+                        className={`px-6 py-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'builder' ? 'border-neon-pink text-neon-pink bg-white/5' : 'border-transparent text-gray-400 hover:text-white hover:bg-white/5'}`}
+                    >
+                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                        Builder Script (Installer)
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('guide')}
+                        className={`px-6 py-4 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'guide' ? 'border-emerald-500 text-emerald-500 bg-white/5' : 'border-transparent text-gray-400 hover:text-white hover:bg-white/5'}`}
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Setup Guide
+                    </button>
+                </div>
+
+                {/* Content Area */}
+                <div className="flex-1 overflow-hidden relative bg-[#151515] flex flex-col">
+                    {/* Toolbar */}
+                    {(activeTab === 'app' || activeTab === 'builder') && (
+                        <div className="flex justify-between items-center p-3 border-b border-white/5 bg-[#1e1e1e]">
+                            <span className="text-xs font-mono text-gray-500 ml-2">
+                                {activeTab === 'app' ? 'neuroclear_desktop.py' : 'build_installer.py'}
+                            </span>
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => copyContent(activeTab === 'app' ? PYTHON_SOURCE : BUILD_SCRIPT, activeTab === 'app' ? 'Source code' : 'Build script')}
+                                    className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-gray-300 rounded text-xs font-medium transition-colors border border-white/10"
+                                >
+                                    Copy Content
+                                </button>
+                                <button 
+                                    onClick={() => downloadFile(activeTab === 'app' ? 'neuroclear_desktop.py' : 'build_installer.py', activeTab === 'app' ? PYTHON_SOURCE : BUILD_SCRIPT)}
+                                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors flex items-center gap-2 ${
+                                        activeTab === 'app' 
+                                            ? 'bg-neon-cyan/20 text-neon-cyan hover:bg-neon-cyan/30' 
+                                            : 'bg-neon-pink/20 text-neon-pink hover:bg-neon-pink/30'
+                                    }`}
+                                >
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                    Download File
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex-1 overflow-auto p-4 custom-scrollbar">
+                        {activeTab === 'app' && (
+                            <pre className="font-mono text-xs text-blue-300 whitespace-pre-wrap select-all leading-relaxed">{PYTHON_SOURCE}</pre>
+                        )}
+                        {activeTab === 'builder' && (
+                            <pre className="font-mono text-xs text-pink-300 whitespace-pre-wrap select-all leading-relaxed">{BUILD_SCRIPT}</pre>
+                        )}
+                        {activeTab === 'guide' && (
+                            <div className="max-w-3xl mx-auto py-8 text-gray-300 space-y-8">
+                                <div>
+                                    <h3 className="text-xl font-bold text-white mb-4">How to Build the Windows Executable (.exe)</h3>
+                                    <p className="text-sm text-gray-400 mb-6">Since browsers cannot create binary files directly, we provide a build script that does it for you locally. Follow these simple steps.</p>
+                                    
+                                    <div className="space-y-6">
+                                        <div className="flex gap-4">
+                                            <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center font-bold border border-emerald-500/30 flex-shrink-0">1</div>
+                                            <div>
+                                                <h4 className="font-bold text-white mb-2">Install Python</h4>
+                                                <p className="text-sm text-gray-400">Ensure you have Python 3.10 or newer installed on your Windows machine.</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-4">
+                                            <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center font-bold border border-emerald-500/30 flex-shrink-0">2</div>
+                                            <div>
+                                                <h4 className="font-bold text-white mb-2">Download Files</h4>
+                                                <p className="text-sm text-gray-400 mb-2">Download both files to the same folder on your computer.</p>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => downloadFile('neuroclear_desktop.py', PYTHON_SOURCE)} className="text-xs px-2 py-1 bg-white/5 border border-white/10 rounded hover:bg-white/10">Download neuroclear_desktop.py</button>
+                                                    <button onClick={() => downloadFile('build_installer.py', BUILD_SCRIPT)} className="text-xs px-2 py-1 bg-white/5 border border-white/10 rounded hover:bg-white/10">Download build_installer.py</button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-4">
+                                            <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center font-bold border border-emerald-500/30 flex-shrink-0">3</div>
+                                            <div>
+                                                <h4 className="font-bold text-white mb-2">Run the Builder</h4>
+                                                <p className="text-sm text-gray-400 mb-2">Double-click <code className="bg-black/30 px-1 py-0.5 rounded text-pink-300">build_installer.py</code> (or run it via terminal).</p>
+                                                <p className="text-xs text-gray-500 italic">This script will automatically install necessary libraries (customtkinter, pyinstaller) and generate the .exe file.</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-4">
+                                            <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center font-bold border border-emerald-500/30 flex-shrink-0">4</div>
+                                            <div>
+                                                <h4 className="font-bold text-white mb-2">Done!</h4>
+                                                <p className="text-sm text-gray-400">Open the newly created <code className="bg-black/30 px-1 py-0.5 rounded">dist</code> folder. You will find <strong className="text-white">NeuroClear.exe</strong> inside.</p>
+                                                <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs text-blue-200">
+                                                    <strong>Note:</strong> You can now zip the `dist` folder or just the .exe to share it or upload to GitHub releases.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                </div>
-                <div className="flex-1 overflow-auto p-4 bg-black/50">
-                    <pre className="font-mono text-xs text-emerald-400 whitespace-pre-wrap select-all">
-                        {PYTHON_SOURCE}
-                    </pre>
-                </div>
-                <div className="p-4 bg-[#252525] border-t border-white/10 text-xs text-gray-400">
-                    <span className="font-bold text-white">Dependencies:</span> pip install customtkinter psutil google-generativeai
                 </div>
             </div>
         </div>
@@ -410,4 +529,35 @@ export default function App() {
                      <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
                          <div className={`text-center p-6 rounded-2xl backdrop-blur-sm ${isLightMode ? 'bg-white/60' : 'bg-black/40'}`}>
                              <p className={`mb-2 font-medium ${isLightMode ? 'text-gray-500' : 'text-gray-400'}`}>System map loaded. Run scan to identify bloatware.</p>
-                             <div className={`text-xs ${isLight
+                             <div className={`text-xs ${isLightMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                 Simulation Mode Active
+                             </div>
+                         </div>
+                     </div>
+                 )}
+            </div>
+        </div>
+        
+        {/* Notification Toast */}
+        {notification && (
+            <div className={`fixed bottom-8 right-8 px-6 py-4 rounded-xl backdrop-blur-xl border shadow-2xl z-50 animate-bounce ${
+                notification.type === 'success' 
+                    ? (isLightMode ? 'bg-emerald-100 border-emerald-200 text-emerald-800' : 'bg-emerald-900/80 border-emerald-500/50 text-white')
+                    : (isLightMode ? 'bg-blue-100 border-blue-200 text-blue-800' : 'bg-blue-900/80 border-blue-500/50 text-white')
+            }`}>
+                <div className="flex items-center gap-3">
+                    {notification.type === 'success' ? (
+                         <svg className={`w-5 h-5 ${isLightMode ? 'text-emerald-600' : 'text-emerald-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    ) : (
+                         <svg className={`w-5 h-5 animate-spin ${isLightMode ? 'text-blue-600' : 'text-blue-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    )}
+                    <span className="font-medium text-sm">{notification.msg}</span>
+                    <button onClick={() => setNotification(null)} className="ml-2 hover:opacity-70">×</button>
+                </div>
+            </div>
+        )}
+
+      </div>
+    </div>
+  );
+}

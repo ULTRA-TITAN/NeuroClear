@@ -1,3 +1,4 @@
+
 export const PYTHON_SOURCE = `import customtkinter as ctk
 import psutil
 import ctypes
@@ -373,4 +374,57 @@ class NeuroClearApp(ctk.CTk):
 if __name__ == "__main__":
     app = NeuroClearApp()
     app.mainloop()
+`;
+
+export const BUILD_SCRIPT = `import subprocess
+import sys
+import os
+
+def install(package):
+    print(f"Installing {package}...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+def build():
+    print("--- NeuroClear Builder ---")
+    
+    # 1. Install Dependencies
+    print("\\n[1/3] Checking dependencies...")
+    try:
+        import customtkinter
+        import psutil
+        import google.generativeai
+        import PyInstaller
+    except ImportError:
+        install("customtkinter")
+        install("psutil")
+        install("google-generativeai")
+        install("pyinstaller")
+        print("Dependencies installed.")
+
+    # 2. Verify Source
+    if not os.path.exists("neuroclear_desktop.py"):
+        print("Error: neuroclear_desktop.py not found in current directory.")
+        input("Press Enter to exit...")
+        return
+
+    # 3. Build EXE
+    print("\\n[2/3] Building executable with PyInstaller...")
+    # --noconsole: Don't show terminal window
+    # --onefile: Bundle everything into one .exe
+    subprocess.check_call([
+        "pyinstaller", 
+        "--noconsole", 
+        "--onefile", 
+        "--name=NeuroClear", 
+        "--clean",
+        "neuroclear_desktop.py"
+    ])
+
+    print("\\n[3/3] Build Complete!")
+    print(f"Your executable is located at: {os.path.abspath('dist/NeuroClear.exe')}")
+    print("You can now zip this folder and share it.")
+    input("Press Enter to close...")
+
+if __name__ == "__main__":
+    build()
 `;
