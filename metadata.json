@@ -1,0 +1,5 @@
+{
+  "name": "Copy of NeuroClear - AI RAM Optimizer",
+  "description": "A high-fidelity web dashboard simulating an AI-powered System Task Manager. Since browsers cannot access OS kernels, this app demonstrates the UI/UX and Gemini AI analysis capabilities (Thinking Mode & Search Grounding) using simulated or pasted process data.",
+  "requestFramePermissions": []
+}

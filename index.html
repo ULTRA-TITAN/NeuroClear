@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeuroClear - AI RAM Optimizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace'],
+            },
+            colors: {
+              glass: {
+                100: 'rgba(255, 255, 255, 0.05)',
+                200: 'rgba(255, 255, 255, 0.1)',
+                300: 'rgba(255, 255, 255, 0.15)',
+                border: 'rgba(255, 255, 255, 0.1)',
+                dark: 'rgba(0, 0, 0, 0.6)',
+                light: 'rgba(255, 255, 255, 0.8)',
+              },
+              neon: {
+                cyan: '#00f3ff',
+                pink: '#ff00ff',
+                green: '#00ff9d',
+                blue: '#3b82f6',
+              }
+            },
+            animation: {
+              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'spin-slow': 'spin 3s linear infinite',
+              'slide-up': 'slideUp 0.3s ease-out forwards',
+              'fade-in': 'fadeIn 0.2s ease-out forwards',
+              'scale-in': 'scaleIn 0.2s ease-out forwards',
+            },
+            keyframes: {
+              slideUp: {
+                '0%': { transform: 'translateY(10px)', opacity: '0' },
+                '100%': { transform: 'translateY(0)', opacity: '1' },
+              },
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              scaleIn: {
+                '0%': { transform: 'scale(0.95)', opacity: '0' },
+                '100%': { transform: 'scale(1)', opacity: '1' },
+              }
+            }
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        transition: background-color 0.5s ease, color 0.5s ease;
+      }
+      body.dark-mode {
+        background-color: #09090b;
+        color: #e4e4e7;
+      }
+      body.light-mode {
+        background-color: #f3f4f6;
+        color: #1f2937;
+      }
+      
+      .liquid-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -1;
+        transition: opacity 0.5s ease;
+      }
+      
+      .dark-liquid {
+        background: radial-gradient(circle at 15% 50%, rgba(76, 29, 149, 0.15), transparent 25%),
+                    radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.15), transparent 25%);
+        opacity: 1;
+      }
+      
+      .light-liquid {
+        background: radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.1), transparent 35%),
+                    radial-gradient(circle at 85% 30%, rgba(14, 165, 233, 0.1), transparent 35%);
+        opacity: 0;
+      }
+
+      body.light-mode .dark-liquid { opacity: 0; }
+      body.light-mode .light-liquid { opacity: 1; }
+
+      .glass-panel {
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+      }
+      
+      .dark-glass {
+        background: rgba(20, 20, 25, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      }
+      
+      .light-glass {
+        background: rgba(255, 255, 255, 0.75);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+      }
+
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        border-radius: 10px;
+        transition: background 0.3s;
+      }
+      body.dark-mode ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      body.dark-mode ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+      body.light-mode ::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.1);
+      }
+      body.light-mode ::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.2);
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
+  }
+}
+</script>
+</head>
+  <body class="dark-mode">
+    <div id="root"></div>
+  </body>
+</html>
